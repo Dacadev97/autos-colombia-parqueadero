@@ -1,0 +1,55 @@
+@startchen mer
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+title Modelo Entidad-Relación (conceptual) - Iteración 1
+
+entity USUARIO {
+  documento <<key>>
+  nombre
+  telefono
+  estado
+}
+entity VEHICULO {
+  placa <<key>>
+  tipo
+  marca
+  color
+}
+entity CELDA {
+  codigo <<key>>
+  tipo
+  estado
+}
+entity OPERADOR {
+  usuario <<key>>
+  nombre
+  clave
+}
+entity REGISTRO_PARQUEO {
+  id_registro <<key>>
+  fecha_entrada
+  observacion_entrada
+  fecha_salida
+  observacion_salida
+}
+relationship POSEE {
+}
+relationship GENERA {
+}
+relationship OCUPA {
+}
+relationship REGISTRA_ENTRADA {
+}
+relationship REGISTRA_SALIDA {
+}
+USUARIO -1- POSEE
+POSEE -N- VEHICULO
+VEHICULO -1- GENERA
+GENERA -N- REGISTRO_PARQUEO
+CELDA -1- OCUPA
+OCUPA -N- REGISTRO_PARQUEO
+OPERADOR -1- REGISTRA_ENTRADA
+REGISTRA_ENTRADA -N- REGISTRO_PARQUEO
+OPERADOR -1- REGISTRA_SALIDA
+REGISTRA_SALIDA -N- REGISTRO_PARQUEO
+@endchen

@@ -1,0 +1,33 @@
+@startuml arquitectura
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+}
+skinparam node {
+  BackgroundColor #FAFAFA
+  BorderColor #5B6B7C
+}
+title Arquitectura del sistema - Arquitectura en capas (Iteración 1)
+
+actor Operador
+node "Equipo de la caseta" {
+  component "Navegador web" as Nav
+}
+node "Servidor de aplicación (Python 3 + Flask)" {
+  component "Capa de presentación\n(rutas Flask + plantillas HTML/CSS)" as Pres
+  component "Capa de aplicación\n(ServicioParqueo, ServicioAutenticacion)" as App
+  component "Capa de dominio\n(entidades y reglas RN-01 a RN-06)" as Dom
+  component "Capa de persistencia\n(repositorios SQL)" as Per
+}
+database "SQLite\nparqueadero.db" as DB
+
+Operador --> Nav
+Nav --> Pres : HTTP (formularios)
+Pres --> App : invoca casos de uso
+App --> Dom : aplica reglas de negocio
+App --> Per : lee / escribe en transacción
+Per --> Dom : construye entidades
+Per --> DB : SQL (sqlite3)
+@enduml

@@ -1,0 +1,35 @@
+@startuml casos_uso
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+}
+skinparam actor {
+  BorderColor #0D47A1
+}
+left to right direction
+title Casos de uso - Iteración 1: Gestión de entrada y salida de vehículos
+
+actor "Operador" as Op
+
+rectangle "Sistema de parqueadero Autos Colombia" {
+  usecase "UC-00 Iniciar sesión" as UC0
+  usecase "UC-01 Registrar entrada\nde vehículo" as UC1
+  usecase "UC-02 Registrar salida\nde vehículo" as UC2
+  usecase "UC-03 Consultar vehículos\ndentro y celdas" as UC3
+  usecase "UC-04 Consultar historial\nde entradas y salidas" as UC4
+  usecase "Asignar celda\ndisponible" as UCA
+  usecase "Registrar novedad\ndel vehículo" as UCN
+}
+
+Op --> UC0
+Op --> UC1
+Op --> UC2
+Op --> UC3
+Op --> UC4
+UC1 ..> UCA : <<include>>
+UCN ..> UC1 : <<extend>>\n(daño al ingresar)
+UCN ..> UC2 : <<extend>>\n(novedad al salir)
+note "El usuario (cliente mensual) no opera el sistema:\nel operador registra su entrada y salida." as N1
+@enduml

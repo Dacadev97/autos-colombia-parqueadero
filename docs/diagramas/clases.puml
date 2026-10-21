@@ -1,0 +1,93 @@
+@startuml clases
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #0D47A1
+  HeaderBackgroundColor #E3F2FD
+}
+title Diagrama de clases - Iteración 1
+
+enum TipoVehiculo {
+  CARRO
+  MOTO
+}
+enum EstadoUsuario {
+  ACTIVO
+  INACTIVO
+}
+enum EstadoCelda {
+  DISPONIBLE
+  OCUPADA
+  FUERA_DE_SERVICIO
+}
+
+class Usuario {
+  - id: int
+  - documento: String
+  - nombre: String
+  - telefono: String
+  - estado: EstadoUsuario
+  + puedeIngresar(): boolean
+}
+class Vehiculo {
+  - id: int
+  - placa: String
+  - tipo: TipoVehiculo
+  - marca: String
+  - color: String
+}
+class Celda {
+  - id: int
+  - codigo: String
+  - tipo: TipoVehiculo
+  - estado: EstadoCelda
+  + puedeAsignarse(tipo: TipoVehiculo): boolean
+}
+class Operador {
+  - id: int
+  - usuario: String
+  - nombre: String
+  - claveHash: String
+}
+class RegistroParqueo {
+  - id: int
+  - fechaEntrada: DateTime
+  - observacionEntrada: String [0..1]
+  - fechaSalida: DateTime [0..1]
+  - observacionSalida: String [0..1]
+  + estaActivo(): boolean
+  + registrarSalida(operador: Operador, fecha: DateTime, observacion: String): void
+}
+class ServicioParqueo <<servicio de aplicación>> {
+  + registrarEntrada(placa: String, operador: Operador, codigoCelda: String [0..1], observacion: String [0..1]): RegistroParqueo
+  + registrarSalida(placa: String, operador: Operador, observacion: String [0..1]): RegistroParqueo
+  + vehiculosDentro(): List<RegistroParqueo>
+  + historial(placa: String, desde: Date, hasta: Date): List<RegistroParqueo>
+  + resumenCeldas(): Map
+}
+
+Usuario "1" -- "1..*" Vehiculo : es titular de >
+Vehiculo "1" -- "0..*" RegistroParqueo : genera >
+Celda "1" -- "0..*" RegistroParqueo : se asigna en >
+Operador "1" -- "0..*" RegistroParqueo : registra entrada >
+Operador "0..1" -- "0..*" RegistroParqueo : registra salida >
+ServicioParqueo ..> RegistroParqueo : crea / cierra
+ServicioParqueo ..> Celda : valida / ocupa / libera
+ServicioParqueo ..> Vehiculo : busca por placa
+ServicioParqueo ..> Usuario : valida estado
+Usuario ..> EstadoUsuario
+Celda ..> EstadoCelda
+Vehiculo ..> TipoVehiculo
+Celda ..> TipoVehiculo
+
+note bottom of RegistroParqueo
+  RN-02: máximo un registro activo
+  (fechaSalida vacía) por vehículo.
+  RN-03: máximo un registro activo por celda.
+  La multiplicidad 0..* conserva el historial;
+  la restricción de "activo" la valida
+  ServicioParqueo.
+end note
+@enduml

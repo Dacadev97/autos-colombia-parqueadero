@@ -1,0 +1,38 @@
+@startuml paquetes
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam package {
+  BackgroundColor #F5F9FF
+  BorderColor #0D47A1
+}
+title Diagrama de paquetes - Iteración 1
+
+package "parqueadero" {
+  package "presentacion" as P {
+    class rutas <<Flask Blueprint>>
+    class "templates (HTML)" as T
+  }
+  package "aplicacion" as A {
+    class ServicioParqueo
+    class ServicioAutenticacion
+  }
+  package "dominio" as D {
+    class "entidades\n(Usuario, Vehiculo, Celda,\nOperador, RegistroParqueo)" as E
+    class "excepciones\n(ReglaNegocioError y\nsus subtipos RN-xx)" as X
+  }
+  package "persistencia" as R {
+    class "repositorios\n(RepositorioVehiculos, RepositorioCeldas,\nRepositorioRegistros, ...)" as RP
+    class "conexion / schema.sql" as S
+  }
+}
+package "tests" as TS {
+  class "test_servicio_parqueo\ntest_rutas" as TT
+}
+
+P ..> A : <<use>>
+P ..> X : <<use>>\n(muestra el motivo del rechazo)
+A ..> D : <<use>>
+A ..> R : <<use>>
+R ..> D : <<use>>\n(construye entidades)
+TS ..> A : <<use>>
+@enduml

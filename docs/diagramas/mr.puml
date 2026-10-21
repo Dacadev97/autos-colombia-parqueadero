@@ -1,0 +1,62 @@
+@startuml mr
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #0D47A1
+  HeaderBackgroundColor #E3F2FD
+}
+hide circle
+hide methods
+title Modelo relacional (lógico) - Iteración 1
+
+entity "usuario" as usuario {
+  * id_usuario <<PK>>
+  --
+  * documento <<UK>>
+  * nombre
+  * telefono
+  * estado
+}
+entity "vehiculo" as vehiculo {
+  * id_vehiculo <<PK>>
+  --
+  * placa <<UK>>
+  * tipo
+  * marca
+  * color
+  * id_usuario <<FK>>
+}
+entity "celda" as celda {
+  * id_celda <<PK>>
+  --
+  * codigo <<UK>>
+  * tipo
+  * estado
+}
+entity "operador" as operador {
+  * id_operador <<PK>>
+  --
+  * usuario <<UK>>
+  * nombre
+  * clave_hash
+}
+entity "registro_parqueo" as registro {
+  * id_registro <<PK>>
+  --
+  * id_vehiculo <<FK>>
+  * id_celda <<FK>>
+  * id_operador_entrada <<FK>>
+  * fecha_entrada
+  observacion_entrada
+  id_operador_salida <<FK>>
+  fecha_salida
+  observacion_salida
+}
+
+usuario ||--|{ vehiculo
+vehiculo ||--o{ registro
+celda ||--o{ registro
+operador ||--o{ registro : entrada
+operador |o--o{ registro : salida
+@enduml
