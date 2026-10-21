@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block contenido %}
+<section class="tarjeta login">
+  <h1>Autos Colombia</h1>
+  <p class="sub">Ingreso de operadores</p>
+  {% if error %}<div class="alerta error">{{ error }}</div>{% endif %}
+  <form method="post">
+    <label>Usuario <input name="usuario" required autofocus></label>
+    <label>Contraseña <input name="clave" type="password" required></label>
+    <button type="submit">Ingresar</button>
+  </form>
+</section>
+{% endblock %}

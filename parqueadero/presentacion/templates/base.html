@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Autos Colombia{% endblock %} · Autos Colombia</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  {% if session.operador_id %}
+  <header class="barra">
+    <div class="marca">Autos Colombia <span>Parqueadero</span></div>
+    <nav>
+      <a href="{{ url_for('parqueadero.panel') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.panel' }}">Panel</a>
+      <a href="{{ url_for('parqueadero.registrar_entrada') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.registrar_entrada' }}">Registrar entrada</a>
+      <a href="{{ url_for('parqueadero.registrar_salida') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.registrar_salida' }}">Registrar salida</a>
+      <a href="{{ url_for('parqueadero.historial') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.historial' }}">Historial</a>
+    </nav>
+    <div class="sesion">{{ session.operador_nombre }} · <a href="{{ url_for('parqueadero.cerrar_sesion') }}">Salir</a></div>
+  </header>
+  {% endif %}
+  <main>{% block contenido %}{% endblock %}</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar entrada{% endblock %}
+{% block contenido %}
+<h1>Registrar entrada</h1>
+{% if resultado %}
+<section class="tarjeta confirmacion">
+  <div class="alerta exito">Entrada registrada correctamente.</div>
+  <dl>
+    <dt>Placa</dt><dd class="placa">{{ resultado.vehiculo.placa }}</dd>
+    <dt>Vehículo</dt><dd>{{ resultado.vehiculo.tipo.value|capitalize }} {{ resultado.vehiculo.marca }} {{ resultado.vehiculo.color }}</dd>
+    <dt>Celda asignada</dt><dd><strong>{{ resultado.celda.codigo }}</strong></dd>
+    <dt>Fecha y hora de entrada</dt><dd>{{ resultado.registro.fecha_entrada }}</dd>
+    <dt>Estado del vehículo</dt><dd>{{ resultado.registro.observacion_entrada or 'Sin novedades' }}</dd>
+  </dl>
+  <a class="boton" href="{{ url_for('parqueadero.registrar_entrada') }}">Registrar otra entrada</a>
+  <a class="boton secundario" href="{{ url_for('parqueadero.panel') }}">Volver al panel</a>
+</section>
+{% else %}
+<section class="tarjeta">
+  {% if error %}<div class="alerta error"><strong>Entrada rechazada ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+  <form method="post">
+    <label>Placa del vehículo <input name="placa" value="{{ formulario.placa }}" placeholder="ABC123" required autofocus maxlength="7"></label>
+    <label>Celda (opcional) <input name="celda" value="{{ formulario.celda }}" placeholder="Se asigna automáticamente"></label>
+    <label>Estado del vehículo al ingresar <textarea name="observacion" maxlength="255" placeholder="Ej.: rayón en puerta trasera derecha">{{ formulario.observacion }}</textarea></label>
+    <div class="acciones">
+      <button type="submit">Confirmar entrada</button>
+      <a class="boton secundario" href="{{ url_for('parqueadero.panel') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

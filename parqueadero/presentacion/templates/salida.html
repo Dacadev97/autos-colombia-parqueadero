@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar salida{% endblock %}
+{% block contenido %}
+<h1>Registrar salida</h1>
+{% if resultado %}
+<section class="tarjeta confirmacion">
+  <div class="alerta exito">Salida registrada correctamente. La celda {{ resultado.celda.codigo }} quedó disponible.</div>
+  <dl>
+    <dt>Placa</dt><dd class="placa">{{ resultado.vehiculo.placa }}</dd>
+    <dt>Celda liberada</dt><dd>{{ resultado.celda.codigo }}</dd>
+    <dt>Entrada</dt><dd>{{ resultado.registro.fecha_entrada }}</dd>
+    <dt>Salida</dt><dd>{{ resultado.registro.fecha_salida }}</dd>
+    <dt>Novedad en la salida</dt><dd>{{ resultado.registro.observacion_salida or 'Sin novedades' }}</dd>
+  </dl>
+  <a class="boton" href="{{ url_for('parqueadero.registrar_salida') }}">Registrar otra salida</a>
+  <a class="boton secundario" href="{{ url_for('parqueadero.panel') }}">Volver al panel</a>
+</section>
+{% else %}
+<section class="tarjeta">
+  {% if error %}<div class="alerta error"><strong>Salida rechazada ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+  <form method="post">
+    <label>Placa del vehículo <input name="placa" value="{{ formulario.placa }}" placeholder="ABC123" required autofocus maxlength="7"></label>
+    <label>Novedad en la salida (opcional) <textarea name="observacion" maxlength="255" placeholder="Ej.: el usuario reporta un golpe en el parachoques">{{ formulario.observacion }}</textarea></label>
+    <div class="acciones">
+      <button type="submit">Confirmar salida</button>
+      <a class="boton secundario" href="{{ url_for('parqueadero.panel') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Historial{% endblock %}
+{% block contenido %}
+<h1>Historial de entradas y salidas</h1>
+<section class="tarjeta">
+  <form method="get" class="filtros">
+    <label>Placa <input name="placa" value="{{ filtros.placa }}" placeholder="ABC123"></label>
+    <label>Desde <input name="desde" type="date" value="{{ filtros.desde }}"></label>
+    <label>Hasta <input name="hasta" type="date" value="{{ filtros.hasta }}"></label>
+    <button type="submit">Consultar</button>
+  </form>
+  {% if registros %}
+  <table>
+    <thead><tr><th>Placa</th><th>Usuario</th><th>Celda</th><th>Entrada</th><th>Salida</th><th>Novedades</th></tr></thead>
+    <tbody>
+    {% for r in registros %}
+      <tr>
+        <td class="placa">{{ r.placa }}</td><td>{{ r.usuario }}</td><td>{{ r.celda }}</td>
+        <td>{{ r.fecha_entrada }}</td>
+        <td>{{ r.fecha_salida or 'Dentro del parqueadero' }}</td>
+        <td>{{ [r.observacion_entrada, r.observacion_salida]|select|join(' / ') or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay registros para los filtros seleccionados.</p>
+  {% endif %}
+</section>
+{% endblock %}
