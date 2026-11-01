@@ -40,9 +40,12 @@ def test_rechazo_de_usuario_conserva_lo_digitado(operador):
     assert "Registro rechazado (RN-07)" in html and 'value="Repetido"' in html
 
 
+# CP-23 (RNF-09): solo el administrador modifica el catálogo de celdas.
 def test_operador_no_puede_modificar_el_catalogo_de_celdas(operador):
     assert operador.post("/celdas", data={"codigo": "C-11"}).status_code == 403
-    assert "Reubicar vehículo" in operador.get("/celdas").get_data(as_text=True)
+    assert operador.post("/celdas/1/estado", data={"estado": "FUERA_DE_SERVICIO"}).status_code == 403
+    html = operador.get("/celdas").get_data(as_text=True)
+    assert "Reubicar vehículo" in html and "C-11" not in html and "Crear celda" not in html
 
 
 def test_administrador_crea_y_deshabilita_celdas(admin):
@@ -59,6 +62,7 @@ def test_reubicacion_desde_la_interfaz(operador):
     assert "reubicado en la celda C-02" in html
 
 
+# CP-24 (RNF-14): una base de la Iteración 1 se migra sin perder datos.
 def test_migra_base_de_la_iteracion_1_sin_perder_datos(tmp_path):
     ruta = str(tmp_path / "antigua.db")
     conexion = sqlite3.connect(ruta)
@@ -69,4 +73,5 @@ def test_migra_base_de_la_iteracion_1_sin_perder_datos(tmp_path):
 
     conexion = abrir_conexion(ruta)
     crear_esquema(conexion)
-    assert conexion.execute("SELECT rol FROM operador WHERE id_operador = 1").fetchone()[0] == "OPERADOR"
+    fila = conexion.execute("SELECT usuario, rol FROM operador WHERE id_operador = 1").fetchone()
+    assert (fila["usuario"], fila["rol"]) == ("operador", "OPERADOR")
