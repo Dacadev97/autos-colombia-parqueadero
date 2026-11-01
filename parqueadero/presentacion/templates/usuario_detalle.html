@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titulo %}{{ usuario.nombre }}{% endblock %}
+{% block contenido %}
+<h1>{{ usuario.nombre }} <span class="estado {{ usuario.estado.value|lower }}">{{ usuario.estado.value|capitalize }}</span></h1>
+{% if error %}<div class="alerta error"><strong>Operación rechazada ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+<div class="columnas">
+  <section class="tarjeta">
+    <h2>Datos del usuario</h2>
+    <form method="post">
+      <label>Documento <input value="{{ usuario.documento }}" disabled></label>
+      <label>Nombre completo <input name="nombre" value="{{ usuario.nombre }}" required maxlength="100"></label>
+      <label>Teléfono <input name="telefono" value="{{ usuario.telefono }}" required maxlength="15"></label>
+      <button type="submit">Guardar cambios</button>
+    </form>
+    <form method="post" action="{{ url_for('parqueadero.cambiar_estado_usuario', id_usuario=usuario.id) }}" class="separado">
+      {% if usuario.estado.value == 'ACTIVO' %}
+      <input type="hidden" name="estado" value="INACTIVO">
+      <button type="submit" class="peligro">Inactivar usuario</button>
+      <p class="ayuda">Un usuario inactivo no puede ingresar vehículos. Su historial se conserva.</p>
+      {% else %}
+      <input type="hidden" name="estado" value="ACTIVO">
+      <button type="submit">Reactivar usuario</button>
+      {% endif %}
+    </form>
+  </section>
+  <section class="tarjeta ancha">
+    <h2>Vehículos ({{ vehiculos|length }})</h2>
+    {% if vehiculos %}
+    <table>
+      <thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Color</th><th>Ubicación</th><th></th></tr></thead>
+      <tbody>
+      {% for v in vehiculos %}
+        <tr>
+          <td class="placa">{{ v.placa }}</td><td>{{ v.tipo|capitalize }}</td>
+          <td><input name="marca" value="{{ v.marca }}" class="compacto" form="vehiculo-{{ v.id_vehiculo }}"></td>
+          <td><input name="color" value="{{ v.color }}" class="compacto" form="vehiculo-{{ v.id_vehiculo }}"></td>
+          <td>{{ 'En celda ' ~ v.celda if v.celda else 'Fuera' }}</td>
+          <td>
+            <form method="post" id="vehiculo-{{ v.id_vehiculo }}" class="acciones" action="{{ url_for('parqueadero.actualizar_vehiculo', id_vehiculo=v.id_vehiculo) }}">
+              <button type="submit" name="accion" value="actualizar" class="mini">Guardar</button>
+              <button type="submit" name="accion" value="eliminar" class="mini peligro">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">El usuario no tiene vehículos registrados.</p>
+    {% endif %}
+    <h2 class="separado">Registrar vehículo</h2>
+    <form method="post" action="{{ url_for('parqueadero.registrar_vehiculo', id_usuario=usuario.id) }}" class="filtros">
+      <label>Placa <input name="placa" value="{{ formulario_vehiculo.placa }}" placeholder="ABC123" required maxlength="7"></label>
+      <label>Marca <input name="marca" value="{{ formulario_vehiculo.marca }}" placeholder="Renault" required maxlength="30"></label>
+      <label>Color <input name="color" value="{{ formulario_vehiculo.color }}" placeholder="Gris" required maxlength="20"></label>
+      <button type="submit">Registrar vehículo</button>
+    </form>
+    <p class="ayuda">El tipo se deduce de la placa: ABC123 es carro y ABC12D es moto.</p>
+  </section>
+</div>
+<a class="boton secundario" href="{{ url_for('parqueadero.usuarios') }}">Volver a usuarios</a>
+{% endblock %}

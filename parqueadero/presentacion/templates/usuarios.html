@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<h1>Usuarios mensuales</h1>
+<div class="columnas">
+  <section class="tarjeta">
+    <h2>Registrar usuario</h2>
+    {% if error %}<div class="alerta error"><strong>Registro rechazado ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+    <form method="post">
+      <label>Documento de identidad <input name="documento" value="{{ formulario.documento }}" placeholder="1036000004" required inputmode="numeric" maxlength="15"></label>
+      <label>Nombre completo <input name="nombre" value="{{ formulario.nombre }}" placeholder="Ana María Pérez" required maxlength="100"></label>
+      <label>Teléfono <input name="telefono" value="{{ formulario.telefono }}" placeholder="3001112233" required inputmode="numeric" maxlength="15"></label>
+      <button type="submit">Registrar usuario</button>
+    </form>
+  </section>
+  <section class="tarjeta ancha">
+    <form method="get" class="filtros">
+      <label>Buscar <input name="texto" value="{{ filtros.texto }}" placeholder="Documento o nombre"></label>
+      <label>Estado
+        <select name="estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO" {{ 'selected' if filtros.estado == 'ACTIVO' }}>Activos</option>
+          <option value="INACTIVO" {{ 'selected' if filtros.estado == 'INACTIVO' }}>Inactivos</option>
+        </select>
+      </label>
+      <button type="submit">Consultar</button>
+    </form>
+    {% if usuarios %}
+    <table>
+      <thead><tr><th>Documento</th><th>Nombre</th><th>Teléfono</th><th>Vehículos</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td>{{ u.documento }}</td><td>{{ u.nombre }}</td><td>{{ u.telefono }}</td><td>{{ u.vehiculos }}</td>
+          <td><span class="estado {{ u.estado|lower }}">{{ u.estado|capitalize }}</span></td>
+          <td><a class="boton secundario" href="{{ url_for('parqueadero.detalle_usuario', id_usuario=u.id_usuario) }}">Ver</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">No hay usuarios para los filtros seleccionados.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

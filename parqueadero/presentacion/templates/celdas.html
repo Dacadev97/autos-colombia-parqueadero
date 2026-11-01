@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Celdas{% endblock %}
+{% block contenido %}
+<h1>Gestión de celdas</h1>
+{% if error %}<div class="alerta error"><strong>Operación rechazada ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+<div class="indicadores">
+  {% for tipo, conteo in resumen.items() %}
+  <div class="tarjeta indicador">
+    <div class="etiqueta">Celdas {{ 'carro' if tipo == 'CARRO' else 'moto' }}</div>
+    <div class="cifra">{{ conteo.DISPONIBLE }}<span> disponibles</span></div>
+    <div class="detalle">{{ conteo.OCUPADA }} ocupadas · {{ conteo.FUERA_DE_SERVICIO }} fuera de servicio</div>
+  </div>
+  {% endfor %}
+</div>
+<section class="tarjeta">
+  <form method="get" class="filtros">
+    <label>Tipo
+      <select name="tipo">
+        <option value="">Todos</option>
+        <option value="CARRO" {{ 'selected' if filtros.tipo == 'CARRO' }}>Carro</option>
+        <option value="MOTO" {{ 'selected' if filtros.tipo == 'MOTO' }}>Moto</option>
+      </select>
+    </label>
+    <label>Estado
+      <select name="estado">
+        <option value="">Todos</option>
+        <option value="DISPONIBLE" {{ 'selected' if filtros.estado == 'DISPONIBLE' }}>Disponible</option>
+        <option value="OCUPADA" {{ 'selected' if filtros.estado == 'OCUPADA' }}>Ocupada</option>
+        <option value="FUERA_DE_SERVICIO" {{ 'selected' if filtros.estado == 'FUERA_DE_SERVICIO' }}>Fuera de servicio</option>
+      </select>
+    </label>
+    <button type="submit">Filtrar</button>
+  </form>
+  <div class="mapa">
+    {% for c in celdas %}
+    <div class="celda {{ c.estado|lower }}">
+      <div class="codigo">{{ c.codigo }}</div>
+      <div class="detalle">{{ c.placa if c.placa else c.estado.replace('_', ' ')|capitalize }}</div>
+      {% if session.operador_rol == 'ADMINISTRADOR' and c.estado != 'OCUPADA' %}
+      <form method="post" action="{{ url_for('parqueadero.cambiar_estado_celda', id_celda=c.id_celda) }}">
+        {% if c.estado == 'DISPONIBLE' %}
+        <button name="estado" value="FUERA_DE_SERVICIO" class="mini">Fuera de servicio</button>
+        {% else %}
+        <button name="estado" value="DISPONIBLE" class="mini">Habilitar</button>
+        {% endif %}
+        <button name="accion" value="eliminar" class="mini peligro">Eliminar</button>
+      </form>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="vacio">No hay celdas para los filtros seleccionados.</p>
+    {% endfor %}
+  </div>
+</section>
+<div class="columnas">
+  <section class="tarjeta">
+    <h2>Reubicar vehículo</h2>
+    <form method="post" action="{{ url_for('parqueadero.reubicar_vehiculo') }}">
+      <label>Placa del vehículo dentro <input name="placa" value="{{ formulario.placa }}" placeholder="ABC123" required maxlength="7"></label>
+      <label>Celda destino <input name="destino" value="{{ formulario.destino }}" placeholder="C-04" required maxlength="5"></label>
+      <button type="submit">Reubicar</button>
+    </form>
+  </section>
+  {% if session.operador_rol == 'ADMINISTRADOR' %}
+  <section class="tarjeta">
+    <h2>Crear celda</h2>
+    <form method="post" action="{{ url_for('parqueadero.crear_celda') }}">
+      <label>Código <input name="codigo" value="{{ formulario.codigo }}" placeholder="C-11 o M-06" required maxlength="5"></label>
+      <button type="submit">Crear celda</button>
+    </form>
+    <p class="ayuda">El prefijo define el tipo: C para carro y M para moto. La celda se crea disponible.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
