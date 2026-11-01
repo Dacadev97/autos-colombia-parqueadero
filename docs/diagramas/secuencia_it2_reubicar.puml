@@ -1,0 +1,47 @@
+@startuml secuencia_it2_reubicar
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 2: Reubicar un vehículo en otra celda (UC-12)
+
+actor Operador
+boundary "celdas.html\n(rutas.reubicar_vehiculo)" as UI
+control ServicioCeldas as SC
+entity "Celda\n(dominio)" as Cel
+participant "Repositorios\n(vehículos, registros, celdas)" as Rep
+database SQLite as DB
+
+Operador -> UI : digita placa ABC123 y celda destino C-04; confirma
+UI -> SC : reubicar_vehiculo(placa, destino)
+SC -> Rep : buscar_por_placa(placa)
+Rep --> SC : Vehiculo
+SC -> Rep : activo_por_vehiculo(id) (RN-05)
+Rep --> SC : RegistroParqueo (celda C-01)
+SC -> Rep : buscar_por_codigo(C-04)
+Rep --> SC : Celda destino
+SC -> Cel : destino.puede_asignarse(tipo) (RN-03)
+Cel --> SC : true / false
+
+alt vehículo dentro y destino disponible y compatible
+  group transacción (RN-14, RNF-03)
+    SC -> Rep : actualizar_celda(registro, C-04)
+    Rep -> DB : UPDATE registro_parqueo
+    SC -> Rep : actualizar_estado(C-01, DISPONIBLE)
+    Rep -> DB : UPDATE celda
+    SC -> Rep : actualizar_estado(C-04, OCUPADA)
+    Rep -> DB : UPDATE celda
+    DB --> SC : COMMIT (o ROLLBACK completo si algo falla)
+  end
+  SC --> UI : ResultadoOperacion
+  UI --> Operador : "Vehículo ABC123 reubicado en la celda C-04"
+else no está dentro (RN-05) o destino no disponible (RN-03)
+  SC --> UI : SinRegistroActivo / CeldaNoDisponible
+  UI --> Operador : "Operación rechazada (RN-xx)"; no se modifica nada
+end
+@enduml
