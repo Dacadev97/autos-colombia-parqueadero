@@ -24,7 +24,7 @@ def _asegurar_administrador(conexion: sqlite3.Connection) -> None:
     with conexion:
         conexion.execute(
             "INSERT INTO operador (usuario, nombre, clave_hash, rol) VALUES (?, ?, ?, 'ADMINISTRADOR')",
-            ("admin", "Administrador del parqueadero", generate_password_hash("admin2026")),
+            ("admin", "Administrador", generate_password_hash("admin2026")),
         )
 
 

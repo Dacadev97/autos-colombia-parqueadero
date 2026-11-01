@@ -18,7 +18,7 @@
       <a href="{{ url_for('parqueadero.usuarios') }}" class="{{ 'activo' if request.endpoint in ('parqueadero.usuarios', 'parqueadero.detalle_usuario') }}">Usuarios</a>
       <a href="{{ url_for('parqueadero.celdas') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.celdas' }}">Celdas</a>
     </nav>
-    <div class="sesion">{{ session.operador_nombre }}{% if session.operador_rol == 'ADMINISTRADOR' %} (admin){% endif %} · <a href="{{ url_for('parqueadero.cerrar_sesion') }}">Salir</a></div>
+    <div class="sesion">{{ session.operador_nombre }} · <a href="{{ url_for('parqueadero.cerrar_sesion') }}">Salir</a></div>
   </header>
   {% endif %}
   <main>

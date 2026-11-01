@@ -18,13 +18,13 @@ main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
 h1 { font-size: 1.5rem; margin: 8px 0 20px; }
 h2 { font-size: 1.1rem; margin: 0 0 16px; }
 
-.barra { display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: var(--primario); color: #fff; flex-wrap: wrap; }
+.barra { display: flex; align-items: center; gap: 14px; padding: 12px 20px; background: var(--primario); color: #fff; flex-wrap: wrap; }
 .marca { font-weight: 700; font-size: 1.1rem; }
 .marca span { font-weight: 400; opacity: .8; }
 .barra nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
-.barra nav a { color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; opacity: .85; }
+.barra nav a { color: #fff; text-decoration: none; font-size: .93rem; padding: 6px 8px; border-radius: 6px; opacity: .85; }
 .barra nav a.activo, .barra nav a:hover { background: rgba(255,255,255,.18); opacity: 1; }
-.sesion { font-size: .9rem; }
+.sesion { font-size: .85rem; }
 .sesion a { color: #fff; }
 
 .tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
