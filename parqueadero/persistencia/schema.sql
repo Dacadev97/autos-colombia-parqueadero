@@ -1,4 +1,5 @@
--- Modelo físico - Autos Colombia, Iteración 1 (entrada y salida de vehículos)
+-- Modelo físico - Autos Colombia, Iteraciones 1 (entrada y salida de vehículos)
+-- y 2 (gestión de usuarios, vehículos y celdas)
 -- SGBD: SQLite 3. Fechas en TEXT con formato ISO 8601 'YYYY-MM-DD HH:MM:SS'.
 
 PRAGMA foreign_keys = ON;
@@ -33,7 +34,9 @@ CREATE TABLE IF NOT EXISTS operador (
     id_operador  INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario      VARCHAR(30)  NOT NULL UNIQUE,
     nombre       VARCHAR(100) NOT NULL,
-    clave_hash   VARCHAR(255) NOT NULL
+    clave_hash   VARCHAR(255) NOT NULL,
+    rol          VARCHAR(13)  NOT NULL DEFAULT 'OPERADOR'
+                 CHECK (rol IN ('OPERADOR', 'ADMINISTRADOR'))
 );
 
 CREATE TABLE IF NOT EXISTS registro_parqueo (
@@ -58,3 +61,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_registro_activo_celda
     ON registro_parqueo (id_celda) WHERE fecha_salida IS NULL;
 CREATE INDEX IF NOT EXISTS ix_registro_fecha_entrada
     ON registro_parqueo (fecha_entrada);
+
+-- Iteración 2: búsquedas de usuarios por nombre y de vehículos por titular.
+CREATE INDEX IF NOT EXISTS ix_usuario_nombre ON usuario (nombre);
+CREATE INDEX IF NOT EXISTS ix_vehiculo_usuario ON vehiculo (id_usuario);

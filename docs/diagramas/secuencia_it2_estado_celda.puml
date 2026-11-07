@@ -1,0 +1,45 @@
+@startuml secuencia_it2_estado_celda
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 2: Poner una celda fuera de servicio (UC-14)
+
+actor Administrador
+boundary "celdas.html\n(rutas.cambiar_estado_celda)" as UI
+control ServicioCeldas as SC
+entity "Celda\n(dominio)" as Cel
+participant RepositorioCeldas as Rep
+database SQLite as DB
+
+Administrador -> UI : pulsa "Fuera de servicio" en la celda C-01
+UI -> UI : requiere_administrador (RNF-09)
+alt la sesión no es de administrador
+  UI --> Administrador : 403 "Acceso denegado"
+else sesión de administrador
+  UI -> SC : cambiar_estado(id_celda, FUERA_DE_SERVICIO)
+  SC -> Rep : buscar_por_id(id_celda)
+  Rep -> DB : SELECT celda
+  DB --> Rep : fila
+  Rep --> SC : Celda
+  SC -> Cel : puede_cambiar_a(FUERA_DE_SERVICIO) (RN-12)
+  Cel --> SC : true solo si está DISPONIBLE
+  alt transición permitida
+    group transacción
+      SC -> Rep : actualizar_estado(id, FUERA_DE_SERVICIO)
+      Rep -> DB : UPDATE celda
+      DB --> SC : COMMIT
+    end
+    SC --> UI : Celda actualizada
+    UI --> Administrador : "La celda C-01 quedó fuera de servicio"
+  else la celda está ocupada
+    SC --> UI : CambioEstadoCeldaInvalido (RN-12)
+    UI --> Administrador : "Operación rechazada (RN-12)";\nsugiere reubicar primero el vehículo
+  end
+end
+@enduml

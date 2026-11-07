@@ -1,0 +1,50 @@
+@startuml secuencia_it1_entrada
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 1: Registrar entrada de vehículo (UC-01)
+
+actor Operador
+boundary "entrada.html\n(rutas.registrar_entrada)" as UI
+control ServicioParqueo as SP
+entity "Usuario / Celda\n(dominio)" as Dom
+participant "Repositorios" as Rep
+database SQLite as DB
+
+Operador -> UI : digita placa, celda (opcional)\ny estado del vehículo; confirma
+UI -> SP : registrar_entrada(placa, operador, celda, observación)
+SP -> SP : normalizar y validar placa (RN-00)
+SP -> Rep : buscar_por_placa(placa)
+Rep -> DB : SELECT vehiculo
+DB --> Rep : fila
+Rep --> SP : Vehiculo
+SP -> Rep : buscar usuario titular
+Rep --> SP : Usuario
+SP -> Dom : usuario.puede_ingresar() (RN-01)
+SP -> Rep : activo_por_vehiculo(id) (RN-02)
+Rep --> SP : ninguno
+SP -> Rep : primera_disponible(tipo) o buscar_por_codigo(celda)
+Rep --> SP : Celda
+SP -> Dom : celda.puede_asignarse(tipo) (RN-03)
+
+alt todas las reglas se cumplen
+  group transacción (RNF-03)
+    SP -> Rep : insertar(registro)
+    Rep -> DB : INSERT registro_parqueo
+    SP -> Rep : actualizar_estado(celda, OCUPADA)
+    Rep -> DB : UPDATE celda
+    DB --> SP : COMMIT confirmado
+  end
+  SP --> UI : ResultadoOperacion(registro, vehículo, celda)
+  UI --> Operador : "Entrada registrada": celda, fecha y hora
+else alguna regla falla (RN-00 a RN-03)
+  SP --> UI : ReglaNegocioError(código, mensaje)
+  UI --> Operador : "Entrada rechazada (RN-xx)" y conserva lo digitado
+end
+@enduml

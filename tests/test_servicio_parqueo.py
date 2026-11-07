@@ -16,8 +16,6 @@ from parqueadero.dominio.excepciones import (
     VehiculoNoRegistrado,
     VehiculoYaDentro,
 )
-from parqueadero.persistencia.conexion import abrir_conexion, crear_esquema
-from parqueadero.persistencia.datos_demo import cargar_datos_demo
 
 OPERADOR = 1
 
@@ -36,15 +34,6 @@ class RelojFalso:
 @pytest.fixture
 def reloj():
     return RelojFalso()
-
-
-@pytest.fixture
-def conexion():
-    conexion = abrir_conexion(":memory:")
-    crear_esquema(conexion)
-    cargar_datos_demo(conexion)
-    yield conexion
-    conexion.close()
 
 
 @pytest.fixture

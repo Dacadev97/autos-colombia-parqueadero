@@ -1,5 +1,5 @@
-"""Datos de demostración. Usuarios, vehículos y celdas se gestionan en la Iteración 2;
-aquí se precargan porque la entrada y salida asume que ya existen."""
+"""Datos de demostración. Desde la Iteración 2, usuarios, vehículos y celdas se gestionan
+desde la aplicación; estos datos solo dejan el sistema listo para probarlo."""
 
 import sqlite3
 
@@ -18,8 +18,19 @@ VEHICULOS = [
 ]
 
 
+def _asegurar_administrador(conexion: sqlite3.Connection) -> None:
+    if conexion.execute("SELECT COUNT(*) FROM operador WHERE rol = 'ADMINISTRADOR'").fetchone()[0]:
+        return
+    with conexion:
+        conexion.execute(
+            "INSERT INTO operador (usuario, nombre, clave_hash, rol) VALUES (?, ?, ?, 'ADMINISTRADOR')",
+            ("admin", "Administrador", generate_password_hash("admin2026")),
+        )
+
+
 def cargar_datos_demo(conexion: sqlite3.Connection) -> None:
     if conexion.execute("SELECT COUNT(*) FROM operador").fetchone()[0]:
+        _asegurar_administrador(conexion)
         return
     with conexion:
         conexion.execute(
@@ -36,3 +47,4 @@ def cargar_datos_demo(conexion: sqlite3.Connection) -> None:
         celdas += [(f"M-{n:02d}", "MOTO", "DISPONIBLE") for n in range(1, 6)]
         celdas[9] = ("C-10", "CARRO", "FUERA_DE_SERVICIO")
         conexion.executemany("INSERT INTO celda (codigo, tipo, estado) VALUES (?, ?, ?)", celdas)
+    _asegurar_administrador(conexion)

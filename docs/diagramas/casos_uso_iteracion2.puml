@@ -1,0 +1,64 @@
+@startuml casos_uso_iteracion2
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+}
+skinparam actor {
+  BorderColor #0D47A1
+}
+skinparam packageStyle rectangle
+left to right direction
+title Casos de uso - Iteración 2: Gestión de usuarios y gestión de celdas
+
+actor "Operador" as Op
+actor "Administrador" as Ad
+Ad -|> Op
+
+rectangle "Sistema de parqueadero Autos Colombia" {
+  package "Gestión de usuarios" {
+    usecase "UC-05 Registrar usuario\nmensual" as UC5
+    usecase "UC-06 Consultar\nusuarios" as UC6
+    usecase "UC-07 Actualizar datos\ndel usuario" as UC7
+    usecase "UC-08 Inactivar o reactivar\nusuario" as UC8
+    usecase "UC-09 Registrar vehículo\ndel usuario" as UC9
+    usecase "UC-10 Actualizar o eliminar\nvehículo" as UC10
+    usecase "Validar datos\ndel usuario" as VU
+    usecase "Validar placa y\ndeducir tipo" as VP
+  }
+  package "Gestión de celdas" {
+    usecase "UC-11 Consultar disponibilidad\nde celdas (mapa)" as UC11
+    usecase "UC-12 Reubicar vehículo\nen otra celda" as UC12
+    usecase "UC-13 Crear celda" as UC13
+    usecase "UC-14 Cambiar estado de celda\n(fuera de servicio / habilitar)" as UC14
+    usecase "UC-15 Eliminar celda" as UC15
+    usecase "Validar celda destino\n(RN-03)" as VC
+  }
+  usecase "UC-00 Iniciar sesión" as UC0
+}
+
+Op --> UC0
+Op --> UC5
+Op --> UC6
+Op --> UC7
+Op --> UC8
+Op --> UC9
+Op --> UC10
+Op --> UC11
+Op --> UC12
+Ad --> UC13
+Ad --> UC14
+Ad --> UC15
+
+UC5 ..> VU : <<include>>
+UC7 ..> VU : <<include>>
+UC9 ..> VP : <<include>>
+UC12 ..> VC : <<include>>
+UC9 ..> UC5 : <<extend>>\n(usuario recién\nregistrado)
+note right of Ad
+  El administrador hereda los casos
+  de uso del operador y además
+  gestiona el catálogo de celdas.
+end note
+@enduml

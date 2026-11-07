@@ -15,10 +15,17 @@
       <a href="{{ url_for('parqueadero.registrar_entrada') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.registrar_entrada' }}">Registrar entrada</a>
       <a href="{{ url_for('parqueadero.registrar_salida') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.registrar_salida' }}">Registrar salida</a>
       <a href="{{ url_for('parqueadero.historial') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.historial' }}">Historial</a>
+      <a href="{{ url_for('parqueadero.usuarios') }}" class="{{ 'activo' if request.endpoint in ('parqueadero.usuarios', 'parqueadero.detalle_usuario') }}">Usuarios</a>
+      <a href="{{ url_for('parqueadero.celdas') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.celdas' }}">Celdas</a>
     </nav>
     <div class="sesion">{{ session.operador_nombre }} · <a href="{{ url_for('parqueadero.cerrar_sesion') }}">Salir</a></div>
   </header>
   {% endif %}
-  <main>{% block contenido %}{% endblock %}</main>
+  <main>
+    {% for categoria, mensaje in get_flashed_messages(with_categories=true) %}
+    <div class="alerta {{ categoria }}">{{ mensaje }}</div>
+    {% endfor %}
+    {% block contenido %}{% endblock %}
+  </main>
 </body>
 </html>

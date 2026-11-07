@@ -1,0 +1,74 @@
+@startuml componentes
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+}
+skinparam component<<Iteración 2>> {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam node {
+  BackgroundColor #FAFAFA
+  BorderColor #5B6B7C
+}
+skinparam linetype ortho
+title Diagrama de componentes - Iteraciones 1 y 2
+
+actor "Operador /\nAdministrador" as Act
+
+node "Equipo de la caseta" {
+  component "Navegador web" as Nav
+}
+
+node "Servidor de aplicación (Python 3 + Flask)" {
+  package "presentacion" {
+    component "Rutas de parqueo\n(login, panel, entrada,\nsalida, historial)" as RutasIt1
+    component "Rutas de usuarios\ny celdas" <<Iteración 2>> as RutasIt2
+    component "Plantillas HTML/CSS" as Tpl
+  }
+  package "aplicacion" {
+    component "ServicioAutenticacion" as SA
+    component "ServicioParqueo" as SP
+    component "ServicioUsuarios" <<Iteración 2>> as SU
+    component "ServicioCeldas" <<Iteración 2>> as SC
+  }
+  package "dominio" {
+    component "Entidades, reglas\n(RN-00 a RN-14)\ny excepciones" as Dom
+  }
+  package "persistencia" {
+    component "Repositorios SQL\n(Usuarios, Vehiculos, Celdas,\nOperadores, Registros)" as Rep
+    component "conexion + schema.sql\n(migración de roles)" as Con
+  }
+}
+database "SQLite\nparqueadero.db" as DB
+
+Act --> Nav
+Nav --> RutasIt1 : HTTP
+Nav --> RutasIt2 : HTTP
+RutasIt1 ..> Tpl
+RutasIt2 ..> Tpl
+RutasIt1 --> SA : IAutenticacion
+RutasIt1 --> SP : IParqueo
+RutasIt2 --> SU : IGestionUsuarios
+RutasIt2 --> SC : IGestionCeldas
+SC ..> SP : ResultadoOperacion
+SA --> Rep : IRepositorios
+SP --> Rep
+SU --> Rep
+SC --> Rep
+SP --> Dom : reglas
+SU --> Dom
+SC --> Dom
+Rep ..> Dom : construye\nentidades
+Rep --> Con
+Con --> DB : SQL (sqlite3)
+
+legend right
+  Azul: componentes de la Iteración 1
+  Naranja: componentes nuevos de la Iteración 2
+  Los componentes de la Iteración 1 se
+  conservan; la Iteración 2 los extiende.
+end legend
+@enduml

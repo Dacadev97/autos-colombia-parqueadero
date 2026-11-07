@@ -1,0 +1,47 @@
+@startuml secuencia_it2_registrar_usuario
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 2: Registrar usuario mensual (UC-05)
+
+actor Operador
+boundary "usuarios.html\n(rutas.usuarios)" as UI
+control ServicioUsuarios as SU
+entity "entidades\n(errores_datos_usuario)" as Dom
+participant RepositorioUsuarios as Rep
+database SQLite as DB
+
+Operador -> UI : digita documento, nombre y teléfono; confirma
+UI -> SU : registrar_usuario(documento, nombre, teléfono)
+SU -> SU : limpiar espacios
+SU -> Dom : errores_datos_usuario(...) (RN-07)
+Dom --> SU : lista de errores
+
+alt datos inválidos
+  SU --> UI : DatosUsuarioInvalidos
+  UI --> Operador : "Registro rechazado (RN-07)" y conserva lo digitado
+else datos válidos
+  SU -> Rep : buscar_por_documento(documento)
+  Rep -> DB : SELECT usuario
+  DB --> Rep : fila o vacío
+  Rep --> SU : Usuario o None
+  alt el documento ya existe
+    SU --> UI : DocumentoDuplicado
+    UI --> Operador : "Registro rechazado (RN-07): ya existe un usuario"
+  else documento nuevo
+    group transacción
+      SU -> Rep : insertar(usuario ACTIVO)
+      Rep -> DB : INSERT usuario
+      DB --> SU : id_usuario (COMMIT)
+    end
+    SU --> UI : Usuario
+    UI --> Operador : redirige a la ficha del usuario:\n"Usuario registrado. Ahora registre sus vehículos"
+  end
+end
+@enduml

@@ -1,0 +1,44 @@
+@startuml secuencia_it2_registrar_vehiculo
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 2: Registrar vehículo de un usuario (UC-09)
+
+actor Operador
+boundary "usuario_detalle.html\n(rutas.registrar_vehiculo)" as UI
+control ServicioUsuarios as SU
+entity "entidades\n(tipo_por_placa)" as Dom
+participant "RepositorioUsuarios /\nRepositorioVehiculos" as Rep
+database SQLite as DB
+
+Operador -> UI : digita placa, marca y color; confirma
+UI -> SU : registrar_vehiculo(id_usuario, placa, marca, color)
+SU -> Rep : buscar usuario por id
+Rep --> SU : Usuario
+SU -> Dom : tipo_por_placa(placa) (RN-00, RN-09)
+Dom --> SU : CARRO, MOTO o None
+SU -> SU : validar marca y color
+SU -> Rep : buscar_por_placa(placa)
+Rep -> DB : SELECT vehiculo
+DB --> Rep : vacío
+Rep --> SU : None
+
+alt placa válida, datos completos y placa no registrada
+  group transacción
+    SU -> Rep : insertar(vehículo)
+    Rep -> DB : INSERT vehiculo
+    DB --> SU : id_vehiculo (COMMIT)
+  end
+  SU --> UI : Vehiculo (tipo deducido)
+  UI --> Operador : "Vehículo DEF456 (carro) registrado"
+else placa inválida, datos incompletos o placa duplicada
+  SU --> UI : PlacaInvalida / DatosVehiculoInvalidos / PlacaDuplicada
+  UI --> Operador : "Operación rechazada (RN-xx)" y conserva lo digitado
+end
+@enduml

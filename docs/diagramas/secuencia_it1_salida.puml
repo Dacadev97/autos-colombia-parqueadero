@@ -1,0 +1,45 @@
+@startuml secuencia_it1_salida
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 1: Registrar salida de vehículo (UC-02)
+
+actor Operador
+boundary "salida.html\n(rutas.registrar_salida)" as UI
+control ServicioParqueo as SP
+entity "RegistroParqueo\n(dominio)" as Reg
+participant "Repositorios" as Rep
+database SQLite as DB
+
+Operador -> UI : digita placa y novedad (opcional); confirma
+UI -> SP : registrar_salida(placa, operador, observación)
+SP -> Rep : buscar_por_placa(placa)
+Rep --> SP : Vehiculo
+SP -> Rep : activo_por_vehiculo(id)
+Rep -> DB : SELECT ... WHERE fecha_salida IS NULL
+DB --> Rep : fila o vacío
+Rep --> SP : RegistroParqueo o None
+
+alt existe una entrada activa
+  SP -> Reg : registrar_salida(operador, ahora, novedad)
+  Reg -> Reg : valida que siga activo y fecha ≥ entrada
+  group transacción (RN-06, RNF-03)
+    SP -> Rep : actualizar_salida(registro)
+    Rep -> DB : UPDATE registro_parqueo
+    SP -> Rep : actualizar_estado(celda, DISPONIBLE)
+    Rep -> DB : UPDATE celda
+    DB --> SP : COMMIT confirmado
+  end
+  SP --> UI : ResultadoOperacion
+  UI --> Operador : "Salida registrada. La celda quedó disponible"
+else sin entrada activa o salida duplicada (RN-05)
+  SP --> UI : SinRegistroActivo
+  UI --> Operador : "Salida rechazada (RN-05)"; no se modifica nada
+end
+@enduml
