@@ -126,7 +126,7 @@ puede ver exactamente qué cambió en cada una (`git diff iteracion-2..iteracion
 |---|---|---|---|---|
 | 1. Entrada y salida | `iteracion-1` | `main` | hasta `05b6364` | `servicio_parqueo.py`, `servicio_autenticacion.py`, `entidades.py` (RN-00 a RN-06), plantillas de entrada, salida, panel e historial |
 | 2. Usuarios y celdas | `iteracion-2` | PR #1 (`feat/iteracion-2`) | `0bfd635` a `bf2c376` | `servicio_usuarios.py`, `servicio_celdas.py`, reglas RN-07 a RN-14, `usuarios.html`, `usuario_detalle.html`, `celdas.html`, `test_servicio_usuarios.py`, `test_servicio_celdas.py` |
-| 3. Pagos | `iteracion-3` | PR #2 (`feat/iteracion-3`) | `b561dfe` a este commit | `servicio_pagos.py`, reglas RN-15 a RN-20, tablas `tarifa` y `pago`, `RepositorioPagos`, `RepositorioTarifas`, `pagos.html`, `recibo.html`, `tarifas.html`, `test_servicio_pagos.py`, `test_rutas_iteracion3.py`, diagramas `*_iteracion3`/`secuencia_it3_*` y mockups 20–27 |
+| 3. Pagos | `iteracion-3` | PR #2 (`feat/iteracion-3`) | desde `b561dfe` (todos los commits del PR #2) | `servicio_pagos.py`, reglas RN-15 a RN-20, tablas `tarifa` y `pago`, `RepositorioPagos`, `RepositorioTarifas`, `pagos.html`, `recibo.html`, `tarifas.html`, `test_servicio_pagos.py`, `test_rutas_iteracion3.py`, diagramas `*_iteracion3`/`secuencia_it3_*` y mockups 20–27 |
 
 En la Iteración 3, `ServicioParqueo.registrar_entrada` incorpora la verificación de la mensualidad (RN-19),
 y dos pruebas de la Iteración 2 se ajustaron para registrar el pago antes del ingreso, como exige esa regla.
