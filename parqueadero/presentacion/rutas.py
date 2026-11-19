@@ -1,4 +1,5 @@
 """Capa de presentación: recibe las acciones del operador y muestra resultados o rechazos.
+Incluye las pantallas de pagos y tarifas de la Iteración 3.
 Las reglas de negocio se validan en la capa de aplicación, nunca aquí."""
 
 from functools import wraps
@@ -9,11 +10,12 @@ from flask import (
 
 from parqueadero.aplicacion.servicio_autenticacion import ServicioAutenticacion
 from parqueadero.aplicacion.servicio_celdas import ServicioCeldas
+from parqueadero.aplicacion.servicio_pagos import ServicioPagos
 from parqueadero.aplicacion.servicio_parqueo import ServicioParqueo
 from parqueadero.aplicacion.servicio_usuarios import ServicioUsuarios
 from parqueadero.dominio.entidades import EstadoCelda, EstadoUsuario, RolOperador
 from parqueadero.dominio.excepciones import (
-    CeldaNoEncontrada, ReglaNegocioError, UsuarioNoEncontrado, VehiculoNoEncontrado,
+    CeldaNoEncontrada, PagoNoEncontrado, ReglaNegocioError, UsuarioNoEncontrado, VehiculoNoEncontrado,
 )
 from parqueadero.persistencia.conexion import abrir_conexion
 
@@ -166,8 +168,12 @@ def usuarios():
 
 
 def _render_detalle(servicio, usuario, error=None, formulario_vehiculo=None):
+    vehiculos = servicio.vehiculos_de(usuario.id)
+    pagos = ServicioPagos(_conexion())
+    # Iteración 3: estado de cuenta de cada vehículo (RF-23).
+    cuentas = {v["placa"]: pagos.estado_cuenta(servicio.obtener_vehiculo(v["id_vehiculo"])) for v in vehiculos}
     return render_template(
-        "usuario_detalle.html", usuario=usuario, vehiculos=servicio.vehiculos_de(usuario.id), error=error,
+        "usuario_detalle.html", usuario=usuario, vehiculos=vehiculos, cuentas=cuentas, error=error,
         formulario_vehiculo=formulario_vehiculo or {"placa": "", "marca": "", "color": ""},
     )
 
@@ -296,3 +302,81 @@ def reubicar_vehiculo():
         return redirect(url_for("parqueadero.celdas"))
     except ReglaNegocioError as rechazo:
         return _render_celdas(servicio, error=rechazo, formulario=formulario)
+
+
+# --- Iteración 3: gestión de pagos y tarifas -----------------------------------------------------
+
+def _render_pagos(servicio: ServicioPagos, formulario=None, error=None, status=200):
+    filtros = {k: request.args.get(k, "") for k in ("placa", "periodo", "estado")}
+    periodo_recaudo = filtros["periodo"] or servicio.periodo_actual()
+    return render_template(
+        "pagos.html", pagos=servicio.listar_pagos(**filtros), filtros=filtros, error=error,
+        formulario=formulario or {"placa": request.args.get("pagar", ""), "periodo": servicio.periodo_actual(),
+                                  "medio": "EFECTIVO", "referencia": ""},
+        tarifas=servicio.listar_tarifas(), recaudo=servicio.recaudo(periodo_recaudo), periodo_recaudo=periodo_recaudo,
+    ), status
+
+
+@bp.route("/pagos")
+@requiere_sesion
+def pagos():
+    return _render_pagos(ServicioPagos(_conexion()))
+
+
+@bp.route("/pagos", methods=["POST"])
+@requiere_sesion
+def registrar_pago():
+    servicio = ServicioPagos(_conexion())
+    formulario = {k: request.form.get(k, "") for k in ("placa", "periodo", "medio", "referencia")}
+    try:
+        resultado = servicio.registrar_pago(
+            formulario["placa"], formulario["periodo"], formulario["medio"], session["operador_id"],
+            formulario["referencia"],
+        )
+        flash(f"Pago registrado: recibo {resultado.pago.numero_recibo} por la mensualidad {resultado.pago.periodo} "
+              f"del vehículo {resultado.vehiculo.placa}.", "exito")
+        return redirect(url_for("parqueadero.recibo", id_pago=resultado.pago.id))
+    except ReglaNegocioError as rechazo:
+        return _render_pagos(servicio, formulario=formulario, error=rechazo)
+
+
+@bp.route("/pagos/<int:id_pago>")
+@requiere_sesion
+def recibo(id_pago):
+    try:
+        resultado = ServicioPagos(_conexion()).obtener_pago(id_pago)
+    except PagoNoEncontrado:
+        abort(404)
+    return render_template("recibo.html", r=resultado)
+
+
+@bp.route("/pagos/<int:id_pago>/anular", methods=["POST"])
+@requiere_administrador
+def anular_pago(id_pago):
+    servicio = ServicioPagos(_conexion())
+    try:
+        pago = servicio.anular_pago(id_pago, request.form.get("motivo", ""), session["operador_id"])
+        flash(f"El recibo {pago.numero_recibo} quedó anulado. El periodo {pago.periodo} vuelve a estar pendiente.", "exito")
+    except PagoNoEncontrado:
+        abort(404)
+    except ReglaNegocioError as rechazo:
+        flash(f"Anulación rechazada ({rechazo.codigo}). {rechazo.mensaje}", "error")
+    return redirect(url_for("parqueadero.recibo", id_pago=id_pago))
+
+
+@bp.route("/tarifas")
+@requiere_sesion
+def tarifas():
+    return render_template("tarifas.html", tarifas=ServicioPagos(_conexion()).listar_tarifas(), error=None)
+
+
+@bp.route("/tarifas", methods=["POST"])
+@requiere_administrador
+def actualizar_tarifa():
+    servicio = ServicioPagos(_conexion())
+    try:
+        tarifa = servicio.actualizar_tarifa(request.form.get("tipo", ""), request.form.get("valor", ""))
+        flash(f"Tarifa mensual de {tarifa.tipo.value.lower()} actualizada a ${tarifa.valor_mensual:,}.".replace(",", "."), "exito")
+        return redirect(url_for("parqueadero.tarifas"))
+    except ReglaNegocioError as rechazo:
+        return render_template("tarifas.html", tarifas=servicio.listar_tarifas(), error=rechazo), 200

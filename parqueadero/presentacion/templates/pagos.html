@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Pagos{% endblock %}
+{% macro pesos(valor) %}${{ '{:,}'.format(valor)|replace(',', '.') }}{% endmacro %}
+{% block contenido %}
+<h1>Pagos de mensualidad</h1>
+<div class="columnas">
+  <section class="tarjeta">
+    <h2>Registrar pago</h2>
+    {% if error %}<div class="alerta error"><strong>Pago rechazado ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+    <form method="post" action="{{ url_for('parqueadero.registrar_pago') }}">
+      <label>Placa <input name="placa" value="{{ formulario.placa }}" placeholder="ABC123" required maxlength="7"></label>
+      <label>Mes que paga <input name="periodo" value="{{ formulario.periodo }}" placeholder="AAAA-MM" required maxlength="7" pattern="\d{4}-\d{2}"></label>
+      <label>Medio de pago
+        <select name="medio">
+          {% for m in ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'] %}
+          <option value="{{ m }}" {{ 'selected' if formulario.medio == m }}>{{ m|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Referencia <input name="referencia" value="{{ formulario.referencia }}" placeholder="Solo transferencia o tarjeta" maxlength="30"></label>
+      <button type="submit">Registrar pago</button>
+    </form>
+    <p class="ayuda">El valor sale de la tarifa vigente:
+      {% for t in tarifas %}{{ t.tipo.value|capitalize }} {{ pesos(t.valor_mensual) }}{{ ' · ' if not loop.last }}{% endfor %}.
+      <a href="{{ url_for('parqueadero.tarifas') }}">Ver tarifas</a></p>
+  </section>
+  <section class="tarjeta ancha">
+    <div class="recaudo"><span>Recaudo de {{ periodo_recaudo }}</span><strong>{{ pesos(recaudo) }}</strong></div>
+    <form method="get" class="filtros">
+      <label>Placa <input name="placa" value="{{ filtros.placa }}" placeholder="ABC123"></label>
+      <label>Mes <input name="periodo" value="{{ filtros.periodo }}" placeholder="AAAA-MM"></label>
+      <label>Estado
+        <select name="estado">
+          <option value="">Todos</option>
+          <option value="VIGENTE" {{ 'selected' if filtros.estado == 'VIGENTE' }}>Vigentes</option>
+          <option value="ANULADO" {{ 'selected' if filtros.estado == 'ANULADO' }}>Anulados</option>
+        </select>
+      </label>
+      <button type="submit">Consultar</button>
+    </form>
+    {% if pagos %}
+    <table>
+      <thead><tr><th>Recibo</th><th>Placa</th><th>Titular</th><th>Mes</th><th>Valor</th><th>Medio</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+      {% for p in pagos %}
+        <tr>
+          <td>{{ p.recibo }}</td><td class="placa">{{ p.placa }}</td><td>{{ p.usuario }}</td><td>{{ p.periodo }}</td>
+          <td>{{ pesos(p.valor) }}</td><td>{{ p.medio|capitalize }}</td>
+          <td><span class="estado {{ p.estado|lower }}">{{ p.estado|capitalize }}</span></td>
+          <td><a class="boton secundario" href="{{ url_for('parqueadero.recibo', id_pago=p.id_pago) }}">Recibo</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">No hay pagos para los filtros seleccionados.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
