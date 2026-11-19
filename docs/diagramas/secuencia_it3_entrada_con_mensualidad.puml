@@ -1,0 +1,38 @@
+@startuml secuencia_it3_entrada_con_mensualidad
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #0D47A1
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia - Iteración 3: Registrar entrada con verificación de mensualidad (UC-01 + UC-21)
+
+actor Operador
+boundary "entrada.html" as UI
+control ServicioParqueo as SP
+participant "RepositorioVehiculos /\nRepositorioUsuarios" as RepV
+participant "RepositorioPagos" as RepP #E8F5E9
+participant "RepositorioCeldas /\nRepositorioRegistros" as RepC
+database SQLite as DB
+
+Operador -> UI : digita la placa
+UI -> SP : registrar_entrada(placa, operador)
+SP -> RepV : vehículo registrado y titular activo (RN-00, RN-01)
+SP -> RepC : sin entrada activa (RN-02)
+SP -> RepP : vigente(id_vehiculo, periodo del día) (RN-19)
+RepP -> DB : SELECT pago VIGENTE del mes
+alt mensualidad del mes pagada
+  SP -> RepC : primera celda disponible del tipo (RN-03)
+  group transacción (RNF-03)
+    SP -> RepC : insertar registro y marcar celda OCUPADA
+  end
+  SP --> UI : ResultadoOperacion
+  UI --> Operador : "Entrada registrada en la celda C-01"
+else mensualidad pendiente
+  SP --> UI : MensualidadVencida
+  UI --> Operador : "Entrada rechazada (RN-19): registre el pago antes del ingreso"
+end
+@enduml

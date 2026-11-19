@@ -1,0 +1,56 @@
+@startuml secuencia_tres_iteraciones
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #FAFAFA
+  ParticipantBorderColor #5B6B7C
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #0D47A1
+}
+autonumber
+title Secuencia integrada - Iteraciones 1, 2 y 3: ciclo de un cliente mensual
+
+actor Operador
+boundary "Interfaz web\n(rutas + plantillas)" as UI
+control ServicioUsuarios as SU #FFF3E0
+control ServicioPagos as SPg #E8F5E9
+control ServicioParqueo as SP #E3F2FD
+control ServicioCeldas as SC #FFF3E0
+database "SQLite\n(repositorios)" as DB
+
+== Iteración 2: alta del cliente y su vehículo ==
+Operador -> UI : registra usuario (documento, nombre, teléfono)
+UI -> SU : registrar_usuario(...) (RN-07)
+SU -> DB : INSERT usuario ACTIVO
+Operador -> UI : registra vehículo (placa, marca, color)
+UI -> SU : registrar_vehiculo(...) (RN-09: tipo por placa)
+SU -> DB : INSERT vehiculo
+
+== Iteración 3: pago de la mensualidad ==
+Operador -> UI : registra pago del mes (medio y referencia)
+UI -> SPg : registrar_pago(placa, periodo, medio, ...) (RN-15 a RN-18)
+SPg -> DB : SELECT tarifa; INSERT pago VIGENTE
+SPg --> UI : recibo REC-0000xx
+
+== Iteración 1 + 3: ingreso con paz y salvo ==
+Operador -> UI : registra entrada (placa)
+UI -> SP : registrar_entrada(placa, ...)
+SP -> DB : ¿pago vigente del mes? (RN-19)
+SP -> DB : INSERT registro_parqueo; celda OCUPADA (RN-02, RN-03)
+SP --> UI : celda asignada
+
+== Iteración 2: reubicación si la celda sale de servicio ==
+Operador -> UI : reubica el vehículo en otra celda
+UI -> SC : reubicar_vehiculo(placa, destino) (RN-14)
+SC -> DB : UPDATE registro y estados de celdas
+
+== Iteración 1: salida ==
+Operador -> UI : registra salida (placa)
+UI -> SP : registrar_salida(placa, ...) (RN-05)
+SP -> DB : UPDATE registro (fecha_salida); celda DISPONIBLE
+SP --> UI : salida registrada
+
+legend right
+  Azul: Iteración 1 · Naranja: Iteración 2 · Verde: Iteración 3
+end legend
+@enduml

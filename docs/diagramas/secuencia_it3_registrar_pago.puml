@@ -1,0 +1,47 @@
+@startuml secuencia_it3_registrar_pago
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E8F5E9
+  ParticipantBorderColor #1B5E20
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #1B5E20
+}
+autonumber
+title Secuencia - Iteración 3: Registrar pago de mensualidad (UC-16)
+
+actor Operador
+boundary "pagos.html\n(rutas.registrar_pago)" as UI
+control ServicioPagos as SPg
+entity "entidades\n(periodo_en_rango, MedioPago)" as Dom
+participant "RepositorioVehiculos /\nRepositorioUsuarios" as RepV
+participant "RepositorioTarifas /\nRepositorioPagos" as RepP
+database SQLite as DB
+
+Operador -> UI : digita placa, mes, medio y referencia
+UI -> SPg : registrar_pago(placa, periodo, medio, operador, referencia)
+SPg -> RepV : buscar vehículo por placa y su titular
+RepV --> SPg : Vehiculo, Usuario
+SPg -> SPg : titular activo (RN-18)
+SPg -> Dom : periodo_en_rango(periodo, hoy) (RN-16)
+Dom --> SPg : True / False
+SPg -> RepP : vigente(id_vehiculo, periodo)
+RepP -> DB : SELECT pago VIGENTE
+DB --> RepP : vacío
+SPg -> Dom : MedioPago(medio).exige_referencia() (RN-17)
+SPg -> RepP : obtener tarifa del tipo (RN-15)
+RepP --> SPg : Tarifa (valor_mensual)
+
+alt datos válidos y mes no pagado
+  group transacción (RNF-15)
+    SPg -> RepP : insertar(pago con el valor de la tarifa)
+    RepP -> DB : INSERT pago (índice único vehículo + periodo vigente)
+    DB --> SPg : id_pago (COMMIT)
+  end
+  SPg --> UI : ResultadoPago
+  UI --> Operador : recibo REC-000013 imprimible
+else titular inactivo, periodo inválido o ya pagado, medio o referencia inválidos
+  SPg --> UI : TitularInactivoNoPaga / PeriodoInvalido / PeriodoYaPagado / ReferenciaPagoInvalida
+  UI --> Operador : "Pago rechazado (RN-xx)" y conserva lo digitado
+end
+@enduml
