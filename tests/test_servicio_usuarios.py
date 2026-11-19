@@ -3,6 +3,7 @@ Cada prueba corresponde a un caso del plan de pruebas (CP-xx) y verifica los dat
 
 import pytest
 
+from parqueadero.aplicacion.servicio_pagos import ServicioPagos
 from parqueadero.aplicacion.servicio_parqueo import ServicioParqueo
 from parqueadero.aplicacion.servicio_usuarios import ServicioUsuarios
 from parqueadero.dominio.entidades import EstadoUsuario, TipoVehiculo
@@ -95,6 +96,9 @@ def test_cp08_reactivar_usuario_permite_ingresar_y_rechaza_estado_repetido(servi
     with pytest.raises(EstadoUsuarioSinCambio):
         servicio.cambiar_estado(3, EstadoUsuario.INACTIVO)
     servicio.cambiar_estado(3, EstadoUsuario.ACTIVO)
+    # Desde la Iteración 3 (RN-19), quien renueva paga la mensualidad del mes antes de ingresar.
+    pagos = ServicioPagos(conexion)
+    pagos.registrar_pago("JKL321", pagos.periodo_actual(), "EFECTIVO", OPERADOR)
     assert ServicioParqueo(conexion).registrar_entrada("JKL321", OPERADOR).celda.codigo == "C-01"
 
 
@@ -106,7 +110,9 @@ def test_cp09_registra_vehiculo_y_deduce_el_tipo_de_la_placa(servicio, conexion)
     assert (carro.placa, carro.tipo) == ("DEF456", TipoVehiculo.CARRO)
     assert moto.tipo == TipoVehiculo.MOTO
     assert {v["placa"] for v in servicio.vehiculos_de(1)} == {"ABC123", "DEF456", "MNO12P"}
-    # El vehículo nuevo puede ingresar de inmediato (integración con la Iteración 1).
+    # El vehículo nuevo ingresa en cuanto paga su primera mensualidad (Iteraciones 1 y 3, RN-19).
+    pagos = ServicioPagos(conexion)
+    pagos.registrar_pago("MNO12P", pagos.periodo_actual(), "EFECTIVO", OPERADOR)
     assert ServicioParqueo(conexion).registrar_entrada("MNO12P", OPERADOR).celda.codigo == "M-01"
 
 

@@ -1,4 +1,5 @@
-"""Casos de uso de la Iteración 1: registrar entrada, registrar salida y consultas."""
+"""Casos de uso de la Iteración 1: registrar entrada, registrar salida y consultas.
+Desde la Iteración 3 la entrada exige la mensualidad del mes al día (RN-19)."""
 
 import sqlite3
 from collections.abc import Callable
@@ -11,10 +12,12 @@ from parqueadero.dominio.entidades import (
     RegistroParqueo,
     Vehiculo,
     normalizar_placa,
+    periodo_de,
     placa_valida,
 )
 from parqueadero.dominio.excepciones import (
     CeldaNoDisponible,
+    MensualidadVencida,
     PlacaInvalida,
     SinCeldasDisponibles,
     SinRegistroActivo,
@@ -24,6 +27,7 @@ from parqueadero.dominio.excepciones import (
 )
 from parqueadero.persistencia.repositorios import (
     RepositorioCeldas,
+    RepositorioPagos,
     RepositorioRegistros,
     RepositorioUsuarios,
     RepositorioVehiculos,
@@ -47,6 +51,7 @@ class ServicioParqueo:
         self.vehiculos = RepositorioVehiculos(conexion)
         self.celdas = RepositorioCeldas(conexion)
         self.registros = RepositorioRegistros(conexion)
+        self.pagos = RepositorioPagos(conexion)
 
     def _ahora(self) -> datetime:
         return self.reloj().replace(microsecond=0)
@@ -75,6 +80,13 @@ class ServicioParqueo:
 
         if self.registros.activo_por_vehiculo(vehiculo.id) is not None:
             raise VehiculoYaDentro(f"El vehículo {vehiculo.placa} ya tiene una entrada activa.")
+
+        # RN-19 (Iteración 3): solo ingresa quien tiene pagada la mensualidad del mes en curso.
+        periodo = periodo_de(self._ahora().date())
+        if self.pagos.vigente(vehiculo.id, periodo) is None:
+            raise MensualidadVencida(
+                f"El vehículo {vehiculo.placa} no tiene pagada la mensualidad de {periodo}. Registre el pago antes del ingreso."
+            )
 
         if codigo_celda:
             celda = self.celdas.buscar_por_codigo(codigo_celda.strip().upper())
