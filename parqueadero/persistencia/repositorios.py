@@ -6,10 +6,14 @@ from datetime import datetime
 from parqueadero.dominio.entidades import (
     Celda,
     EstadoCelda,
+    EstadoPago,
     EstadoUsuario,
+    MedioPago,
     Operador,
+    Pago,
     RegistroParqueo,
     RolOperador,
+    Tarifa,
     TipoVehiculo,
     Usuario,
     Vehiculo,
@@ -281,3 +285,105 @@ class RepositorioRegistros:
             parametros.append(hasta)
         sql += " ORDER BY r.fecha_entrada DESC"
         return [dict(f) for f in self.conexion.execute(sql, parametros).fetchall()]
+
+
+# --- Iteración 3: tarifas y pagos ------------------------------------------------------------------
+
+class RepositorioTarifas:
+    def __init__(self, conexion: sqlite3.Connection):
+        self.conexion = conexion
+
+    def obtener(self, tipo: TipoVehiculo) -> Tarifa | None:
+        fila = self.conexion.execute("SELECT * FROM tarifa WHERE tipo = ?", (tipo.value,)).fetchone()
+        return Tarifa(TipoVehiculo(fila["tipo"]), fila["valor_mensual"]) if fila else None
+
+    def listar(self) -> list[Tarifa]:
+        filas = self.conexion.execute("SELECT * FROM tarifa ORDER BY tipo").fetchall()
+        return [Tarifa(TipoVehiculo(f["tipo"]), f["valor_mensual"]) for f in filas]
+
+    def guardar(self, tarifa: Tarifa) -> None:
+        self.conexion.execute(
+            "INSERT INTO tarifa (tipo, valor_mensual) VALUES (?, ?) "
+            "ON CONFLICT (tipo) DO UPDATE SET valor_mensual = excluded.valor_mensual",
+            (tarifa.tipo.value, tarifa.valor_mensual),
+        )
+
+
+class RepositorioPagos:
+    def __init__(self, conexion: sqlite3.Connection):
+        self.conexion = conexion
+
+    @staticmethod
+    def _a_pago(fila) -> Pago:
+        return Pago(
+            id=fila["id_pago"], vehiculo_id=fila["id_vehiculo"], periodo=fila["periodo"], valor=fila["valor"],
+            medio=MedioPago(fila["medio"]), referencia=fila["referencia"], fecha_pago=_a_fecha(fila["fecha_pago"]),
+            operador_id=fila["id_operador"], estado=EstadoPago(fila["estado"]),
+            motivo_anulacion=fila["motivo_anulacion"], fecha_anulacion=_a_fecha(fila["fecha_anulacion"]),
+            operador_anulacion_id=fila["id_operador_anulacion"],
+        )
+
+    def buscar_por_id(self, id_pago: int) -> Pago | None:
+        fila = self.conexion.execute("SELECT * FROM pago WHERE id_pago = ?", (id_pago,)).fetchone()
+        return self._a_pago(fila) if fila else None
+
+    def vigente(self, id_vehiculo: int, periodo: str) -> Pago | None:
+        fila = self.conexion.execute(
+            "SELECT * FROM pago WHERE id_vehiculo = ? AND periodo = ? AND estado = 'VIGENTE'", (id_vehiculo, periodo)
+        ).fetchone()
+        return self._a_pago(fila) if fila else None
+
+    def periodos_pagados(self, id_vehiculo: int) -> list[str]:
+        filas = self.conexion.execute(
+            "SELECT periodo FROM pago WHERE id_vehiculo = ? AND estado = 'VIGENTE' ORDER BY periodo",
+            (id_vehiculo,),
+        ).fetchall()
+        return [f["periodo"] for f in filas]
+
+    def insertar(self, pago: Pago) -> int:
+        cursor = self.conexion.execute(
+            """INSERT INTO pago (id_vehiculo, periodo, valor, medio, referencia, fecha_pago, id_operador, estado)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (pago.vehiculo_id, pago.periodo, pago.valor, pago.medio.value, pago.referencia,
+             _a_texto(pago.fecha_pago), pago.operador_id, pago.estado.value),
+        )
+        return cursor.lastrowid
+
+    def actualizar_anulacion(self, pago: Pago) -> None:
+        self.conexion.execute(
+            """UPDATE pago SET estado = ?, motivo_anulacion = ?, fecha_anulacion = ?, id_operador_anulacion = ?
+               WHERE id_pago = ? AND estado = 'VIGENTE'""",
+            (pago.estado.value, pago.motivo_anulacion, _a_texto(pago.fecha_anulacion),
+             pago.operador_anulacion_id, pago.id),
+        )
+
+    def listar_detalle(self, placa: str | None = None, periodo: str | None = None,
+                       estado: EstadoPago | None = None) -> list[dict]:
+        sql = """SELECT p.id_pago, printf('REC-%06d', p.id_pago) AS recibo, p.periodo, p.valor, p.medio,
+                        p.referencia, p.fecha_pago, p.estado, p.motivo_anulacion, v.placa, v.tipo,
+                        u.nombre AS usuario, o.nombre AS operador
+                 FROM pago p
+                 JOIN vehiculo v ON v.id_vehiculo = p.id_vehiculo
+                 JOIN usuario u ON u.id_usuario = v.id_usuario
+                 JOIN operador o ON o.id_operador = p.id_operador
+                 WHERE 1 = 1"""
+        parametros: list = []
+        if placa:
+            sql += " AND v.placa = ?"
+            parametros.append(placa)
+        if periodo:
+            sql += " AND p.periodo = ?"
+            parametros.append(periodo)
+        if estado:
+            sql += " AND p.estado = ?"
+            parametros.append(estado.value)
+        sql += " ORDER BY p.fecha_pago DESC, p.id_pago DESC"
+        return [dict(f) for f in self.conexion.execute(sql, parametros).fetchall()]
+
+    def recaudo(self, periodo: str | None = None) -> int:
+        """Suma de pagos vigentes (los anulados no cuentan como recaudo)."""
+        sql, parametros = "SELECT COALESCE(SUM(valor), 0) FROM pago WHERE estado = 'VIGENTE'", []
+        if periodo:
+            sql += " AND periodo = ?"
+            parametros.append(periodo)
+        return self.conexion.execute(sql, parametros).fetchone()[0]

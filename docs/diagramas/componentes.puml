@@ -9,12 +9,16 @@ skinparam component<<Iteración 2>> {
   BackgroundColor #FFF3E0
   BorderColor #E65100
 }
+skinparam component<<Iteración 3>> {
+  BackgroundColor #E8F5E9
+  BorderColor #1B5E20
+}
 skinparam node {
   BackgroundColor #FAFAFA
   BorderColor #5B6B7C
 }
 skinparam linetype ortho
-title Diagrama de componentes - Iteraciones 1 y 2
+title Diagrama de componentes - Iteraciones 1, 2 y 3
 
 actor "Operador /\nAdministrador" as Act
 
@@ -26,6 +30,7 @@ node "Servidor de aplicación (Python 3 + Flask)" {
   package "presentacion" {
     component "Rutas de parqueo\n(login, panel, entrada,\nsalida, historial)" as RutasIt1
     component "Rutas de usuarios\ny celdas" <<Iteración 2>> as RutasIt2
+    component "Rutas de pagos,\nrecibos y tarifas" <<Iteración 3>> as RutasIt3
     component "Plantillas HTML/CSS" as Tpl
   }
   package "aplicacion" {
@@ -33,12 +38,14 @@ node "Servidor de aplicación (Python 3 + Flask)" {
     component "ServicioParqueo" as SP
     component "ServicioUsuarios" <<Iteración 2>> as SU
     component "ServicioCeldas" <<Iteración 2>> as SC
+    component "ServicioPagos" <<Iteración 3>> as SPg
   }
   package "dominio" {
-    component "Entidades, reglas\n(RN-00 a RN-14)\ny excepciones" as Dom
+    component "Entidades, reglas\n(RN-00 a RN-20)\ny excepciones" as Dom
   }
   package "persistencia" {
     component "Repositorios SQL\n(Usuarios, Vehiculos, Celdas,\nOperadores, Registros)" as Rep
+    component "RepositorioPagos y\nRepositorioTarifas" <<Iteración 3>> as RepP
     component "conexion + schema.sql\n(migración de roles)" as Con
   }
 }
@@ -47,6 +54,15 @@ database "SQLite\nparqueadero.db" as DB
 Act --> Nav
 Nav --> RutasIt1 : HTTP
 Nav --> RutasIt2 : HTTP
+Nav --> RutasIt3 : HTTP
+RutasIt3 ..> Tpl
+RutasIt3 --> SPg : IGestionPagos
+SPg --> RepP
+SPg --> Rep : vehículo y titular
+SP --> RepP : IVerificarMensualidad (RN-19)
+SPg --> Dom
+RepP ..> Dom
+RepP --> Con
 RutasIt1 ..> Tpl
 RutasIt2 ..> Tpl
 RutasIt1 --> SA : IAutenticacion
@@ -68,7 +84,8 @@ Con --> DB : SQL (sqlite3)
 legend right
   Azul: componentes de la Iteración 1
   Naranja: componentes nuevos de la Iteración 2
-  Los componentes de la Iteración 1 se
-  conservan; la Iteración 2 los extiende.
+  Verde: componentes nuevos de la Iteración 3
+  Cada iteración conserva los componentes
+  anteriores y los extiende.
 end legend
 @enduml

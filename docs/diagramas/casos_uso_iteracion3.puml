@@ -1,0 +1,52 @@
+@startuml casos_uso_iteracion3
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam usecase {
+  BackgroundColor #E8F5E9
+  BorderColor #1B5E20
+}
+skinparam actor {
+  BorderColor #1B5E20
+}
+skinparam packageStyle rectangle
+left to right direction
+title Casos de uso - Iteración 3: Gestión de pagos
+
+actor "Operador" as Op
+actor "Administrador" as Ad
+Ad -|> Op
+
+rectangle "Sistema de parqueadero Autos Colombia" {
+  package "Gestión de pagos" {
+    usecase "UC-16 Registrar pago\nde mensualidad" as UC16
+    usecase "UC-17 Consultar pagos\ny recaudo" as UC17
+    usecase "UC-18 Consultar estado de\ncuenta del vehículo" as UC18
+    usecase "UC-19 Anular pago" as UC19
+    usecase "UC-20 Configurar tarifas\nmensuales" as UC20
+    usecase "UC-21 Verificar mensualidad\nal día (RN-19)" as UC21
+    usecase "Validar periodo, medio\ny referencia" as VPg
+    usecase "Emitir recibo\n(REC-000001)" as Rec
+  }
+  usecase "UC-01 Registrar entrada\n(Iteración 1)" as UC1
+  usecase "UC-00 Iniciar sesión" as UC0
+}
+
+Op --> UC0
+Op --> UC16
+Op --> UC17
+Op --> UC18
+Op --> UC1
+Ad --> UC19
+Ad --> UC20
+
+UC16 ..> VPg : <<include>>
+UC16 ..> Rec : <<include>>
+UC1 ..> UC21 : <<include>>
+UC19 ..> UC17 : <<extend>>
+UC18 ..> UC16 : <<extend>>\n(si está pendiente)
+
+note right of UC21
+  Sin la mensualidad del mes pagada
+  el vehículo no ingresa (RN-19).
+end note
+@enduml

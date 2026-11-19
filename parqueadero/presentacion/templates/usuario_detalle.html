@@ -27,7 +27,7 @@
     <h2>Vehículos ({{ vehiculos|length }})</h2>
     {% if vehiculos %}
     <table>
-      <thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Color</th><th>Ubicación</th><th></th></tr></thead>
+      <thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Color</th><th>Ubicación</th><th>Mensualidad</th><th></th></tr></thead>
       <tbody>
       {% for v in vehiculos %}
         <tr>
@@ -35,6 +35,13 @@
           <td><input name="marca" value="{{ v.marca }}" class="compacto" form="vehiculo-{{ v.id_vehiculo }}"></td>
           <td><input name="color" value="{{ v.color }}" class="compacto" form="vehiculo-{{ v.id_vehiculo }}"></td>
           <td>{{ 'En celda ' ~ v.celda if v.celda else 'Fuera' }}</td>
+          {% set cuenta = cuentas[v.placa] %}
+          <td>
+            {% if cuenta.al_dia %}<span class="estado al-dia">Al día {{ cuenta.periodo_actual }}</span>
+            {% else %}<span class="estado pendiente">Pendiente {{ cuenta.periodo_actual }}</span>
+              <a class="mini" href="{{ url_for('parqueadero.pagos', pagar=v.placa) }}">Pagar</a>{% endif %}
+            <div class="ayuda">Último pago: {{ cuenta.ultimo_periodo or 'ninguno' }}</div>
+          </td>
           <td>
             <form method="post" id="vehiculo-{{ v.id_vehiculo }}" class="acciones" action="{{ url_for('parqueadero.actualizar_vehiculo', id_vehiculo=v.id_vehiculo) }}">
               <button type="submit" name="accion" value="actualizar" class="mini">Guardar</button>

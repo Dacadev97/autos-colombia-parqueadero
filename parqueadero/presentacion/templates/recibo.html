@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}Recibo {{ r.pago.numero_recibo }}{% endblock %}
+{% macro pesos(valor) %}${{ '{:,}'.format(valor)|replace(',', '.') }}{% endmacro %}
+{% block contenido %}
+<section class="tarjeta recibo">
+  <div class="recibo-cabecera">
+    <div><div class="marca-recibo">Autos Colombia</div><div class="ayuda">Parqueadero por mensualidad</div></div>
+    <div class="derecha"><div class="numero-recibo">{{ r.pago.numero_recibo }}</div>
+      <span class="estado {{ r.pago.estado.value|lower }}">{{ r.pago.estado.value|capitalize }}</span></div>
+  </div>
+  <dl class="datos-recibo">
+    <dt>Titular</dt><dd>{{ r.usuario.nombre }} · CC {{ r.usuario.documento }}</dd>
+    <dt>Vehículo</dt><dd><span class="placa">{{ r.vehiculo.placa }}</span> · {{ r.vehiculo.tipo.value|capitalize }} {{ r.vehiculo.marca }} {{ r.vehiculo.color }}</dd>
+    <dt>Mensualidad</dt><dd>{{ r.pago.periodo }}</dd>
+    <dt>Valor</dt><dd class="valor">{{ pesos(r.pago.valor) }}</dd>
+    <dt>Medio de pago</dt><dd>{{ r.pago.medio.value|capitalize }}{% if r.pago.referencia %} · Ref. {{ r.pago.referencia }}{% endif %}</dd>
+    <dt>Fecha de pago</dt><dd>{{ r.pago.fecha_pago.strftime('%Y-%m-%d %H:%M') }}</dd>
+    {% if not r.pago.esta_vigente() %}
+    <dt>Anulado</dt><dd>{{ r.pago.fecha_anulacion.strftime('%Y-%m-%d %H:%M') }} · {{ r.pago.motivo_anulacion }}</dd>
+    {% endif %}
+  </dl>
+  <div class="acciones-recibo no-imprimir">
+    <button type="button" onclick="window.print()">Imprimir recibo</button>
+    <a class="boton secundario" href="{{ url_for('parqueadero.pagos') }}">Volver a pagos</a>
+  </div>
+</section>
+{% if r.pago.esta_vigente() and session.operador_rol == 'ADMINISTRADOR' %}
+<section class="tarjeta no-imprimir">
+  <h2>Anular pago</h2>
+  <form method="post" action="{{ url_for('parqueadero.anular_pago', id_pago=r.pago.id) }}" class="filtros">
+    <label>Motivo <input name="motivo" placeholder="Pago registrado a la placa equivocada" required maxlength="200"></label>
+    <button type="submit" class="peligro">Anular pago</button>
+  </form>
+  <p class="ayuda">El pago no se borra: queda anulado con su motivo y el mes vuelve a estar pendiente.</p>
+</section>
+{% endif %}
+{% endblock %}

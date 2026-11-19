@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Tarifas{% endblock %}
+{% macro pesos(valor) %}${{ '{:,}'.format(valor)|replace(',', '.') }}{% endmacro %}
+{% block contenido %}
+<h1>Tarifas mensuales</h1>
+{% if error %}<div class="alerta error"><strong>Cambio rechazado ({{ error.codigo }}).</strong> {{ error.mensaje }}</div>{% endif %}
+<section class="tarjeta">
+  <table>
+    <thead><tr><th>Tipo de vehículo</th><th>Mensualidad vigente</th>{% if session.operador_rol == 'ADMINISTRADOR' %}<th>Nuevo valor</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for t in tarifas %}
+      <tr>
+        <td>{{ t.tipo.value|capitalize }}</td><td class="valor">{{ pesos(t.valor_mensual) }}</td>
+        {% if session.operador_rol == 'ADMINISTRADOR' %}
+        <td>
+          <form method="post" class="acciones">
+            <input type="hidden" name="tipo" value="{{ t.tipo.value }}">
+            <input name="valor" class="compacto" placeholder="{{ t.valor_mensual }}" inputmode="numeric" required>
+            <button type="submit" class="mini">Actualizar</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="ayuda">Un cambio de tarifa aplica a los pagos nuevos; los recibos ya emitidos conservan su valor.
+    {% if session.operador_rol != 'ADMINISTRADOR' %}Solo el administrador puede modificar las tarifas.{% endif %}</p>
+</section>
+{% endblock %}

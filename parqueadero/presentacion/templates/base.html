@@ -17,6 +17,7 @@
       <a href="{{ url_for('parqueadero.historial') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.historial' }}">Historial</a>
       <a href="{{ url_for('parqueadero.usuarios') }}" class="{{ 'activo' if request.endpoint in ('parqueadero.usuarios', 'parqueadero.detalle_usuario') }}">Usuarios</a>
       <a href="{{ url_for('parqueadero.celdas') }}" class="{{ 'activo' if request.endpoint == 'parqueadero.celdas' }}">Celdas</a>
+      <a href="{{ url_for('parqueadero.pagos') }}" class="{{ 'activo' if request.endpoint in ('parqueadero.pagos', 'parqueadero.registrar_pago', 'parqueadero.recibo', 'parqueadero.tarifas') }}">Pagos</a>
     </nav>
     <div class="sesion">{{ session.operador_nombre }} · <a href="{{ url_for('parqueadero.cerrar_sesion') }}">Salir</a></div>
   </header>
