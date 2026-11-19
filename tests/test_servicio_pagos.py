@@ -194,3 +194,23 @@ def test_cp36_reactivar_pagar_e_ingresar(conexion, reloj, pagos):
     pago = pagos.registrar_pago("JKL321", "2026-11", "TRANSFERENCIA", OPERADOR, "TRF-55021").pago
     assert pago.estado == EstadoPago.VIGENTE
     assert ServicioParqueo(conexion, reloj).registrar_entrada("JKL321", OPERADOR).celda.codigo == "C-01"
+
+
+# CP-27c (análisis de valores límite del periodo): con hoy = 2026-11, los bordes válidos son
+# 2025-11 (12 meses atrás) y 2027-01 (2 adelante); 2025-10 y 2027-02 quedan fuera (CP-27).
+@pytest.mark.parametrize("periodo", ["2025-11", "2027-01"])
+def test_cp27c_acepta_los_bordes_validos_del_periodo(pagos, conexion, periodo):
+    resultado = pagos.registrar_pago("ABC123", periodo, "EFECTIVO", OPERADOR)
+    assert _fila_pago(conexion, resultado.pago.id)["periodo"] == periodo
+
+
+# CP-34b (análisis de valores límite de la tarifa): 10 000 y 2 000 000 son válidos; 9 999 y 2 000 001 no.
+@pytest.mark.parametrize("valor, valido", [(9_999, False), (10_000, True), (2_000_000, True), (2_000_001, False)])
+def test_cp34b_bordes_de_la_tarifa(pagos, conexion, valor, valido):
+    if valido:
+        pagos.actualizar_tarifa("MOTO", valor)
+        assert conexion.execute("SELECT valor_mensual FROM tarifa WHERE tipo = 'MOTO'").fetchone()[0] == valor
+    else:
+        with pytest.raises(TarifaInvalida):
+            pagos.actualizar_tarifa("MOTO", valor)
+        assert conexion.execute("SELECT valor_mensual FROM tarifa WHERE tipo = 'MOTO'").fetchone()[0] == 70_000
