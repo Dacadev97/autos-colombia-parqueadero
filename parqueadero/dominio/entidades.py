@@ -1,9 +1,9 @@
 """Entidades y reglas del dominio: entrada y salida de vehículos (Iteración 1),
-gestión de usuarios, vehículos y celdas (Iteración 2)."""
+gestión de usuarios, vehículos y celdas (Iteración 2) y gestión de pagos (Iteración 3)."""
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 PATRON_PLACA_CARRO = re.compile(r"^[A-Z]{3}\d{3}$")
@@ -148,3 +148,92 @@ class RegistroParqueo:
         self.operador_salida_id = operador_id
         self.fecha_salida = fecha
         self.observacion_salida = observacion or None
+
+
+# --- Iteración 3: gestión de pagos -----------------------------------------------------------------
+
+PATRON_PERIODO = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
+PATRON_REFERENCIA = re.compile(r"^[A-Za-z0-9-]{4,30}$")
+TARIFA_MINIMA, TARIFA_MAXIMA = 10_000, 2_000_000
+MESES_ATRAS_PERMITIDOS, MESES_ADELANTE_PERMITIDOS = 12, 2
+
+
+class MedioPago(str, Enum):
+    EFECTIVO = "EFECTIVO"
+    TRANSFERENCIA = "TRANSFERENCIA"
+    TARJETA = "TARJETA"
+
+    def exige_referencia(self) -> bool:
+        """RN-17: transferencia y tarjeta deben registrar la referencia de la transacción."""
+        return self in (MedioPago.TRANSFERENCIA, MedioPago.TARJETA)
+
+
+class EstadoPago(str, Enum):
+    VIGENTE = "VIGENTE"
+    ANULADO = "ANULADO"
+
+
+def periodo_de(fecha: date) -> str:
+    """Una mensualidad cubre un mes calendario, identificado como AAAA-MM."""
+    return f"{fecha.year:04d}-{fecha.month:02d}"
+
+
+def indice_periodo(periodo: str) -> int | None:
+    """Número de meses desde el año 0; permite comparar y restar periodos. None si el formato es inválido."""
+    coincidencia = PATRON_PERIODO.match(periodo or "")
+    if not coincidencia:
+        return None
+    return int(coincidencia.group(1)) * 12 + int(coincidencia.group(2)) - 1
+
+
+def periodo_en_rango(periodo: str, hoy: date) -> bool:
+    """RN-16: se aceptan pagos de hasta 12 meses atrasados y hasta 2 meses por adelantado."""
+    indice = indice_periodo(periodo)
+    if indice is None:
+        return False
+    actual = indice_periodo(periodo_de(hoy))
+    return actual - MESES_ATRAS_PERMITIDOS <= indice <= actual + MESES_ADELANTE_PERMITIDOS
+
+
+def tarifa_valida(valor: int) -> bool:
+    """RN-15: la tarifa mensual es un entero en pesos entre 10 000 y 2 000 000."""
+    return isinstance(valor, int) and TARIFA_MINIMA <= valor <= TARIFA_MAXIMA
+
+
+@dataclass
+class Tarifa:
+    tipo: TipoVehiculo
+    valor_mensual: int
+
+
+@dataclass
+class Pago:
+    id: int | None
+    vehiculo_id: int
+    periodo: str
+    valor: int
+    medio: MedioPago
+    referencia: str | None
+    fecha_pago: datetime
+    operador_id: int
+    estado: EstadoPago = EstadoPago.VIGENTE
+    motivo_anulacion: str | None = None
+    fecha_anulacion: datetime | None = None
+    operador_anulacion_id: int | None = None
+
+    @property
+    def numero_recibo(self) -> str:
+        """El recibo toma el consecutivo del pago: REC-000001, REC-000002, …"""
+        return f"REC-{self.id:06d}" if self.id else "REC-PENDIENTE"
+
+    def esta_vigente(self) -> bool:
+        return self.estado == EstadoPago.VIGENTE
+
+    def anular(self, operador_id: int, fecha: datetime, motivo: str) -> None:
+        """RN-20: un pago nunca se borra; se anula con motivo y queda en el historial."""
+        if not self.esta_vigente():
+            raise ValueError("El pago ya está anulado.")
+        self.estado = EstadoPago.ANULADO
+        self.operador_anulacion_id = operador_id
+        self.fecha_anulacion = fecha
+        self.motivo_anulacion = motivo

@@ -84,3 +84,44 @@ class CambioEstadoCeldaInvalido(ReglaNegocioError):
 
 class CeldaConHistorial(ReglaNegocioError):
     codigo = "RN-13"
+
+
+# Iteración 3: gestión de pagos
+class TarifaInvalida(ReglaNegocioError):
+    codigo = "RN-15"
+
+
+class TarifaNoConfigurada(ReglaNegocioError):
+    codigo = "RN-15"
+
+
+class PeriodoInvalido(ReglaNegocioError):
+    codigo = "RN-16"
+
+
+class PeriodoYaPagado(ReglaNegocioError):
+    codigo = "RN-16"
+
+
+class MedioPagoInvalido(ReglaNegocioError):
+    codigo = "RN-17"
+
+
+class ReferenciaPagoInvalida(ReglaNegocioError):
+    codigo = "RN-17"
+
+
+class TitularInactivoNoPaga(ReglaNegocioError):
+    codigo = "RN-18"
+
+
+class MensualidadVencida(ReglaNegocioError):
+    codigo = "RN-19"
+
+
+class PagoNoEncontrado(ReglaNegocioError):
+    codigo = "RN-20"
+
+
+class AnulacionInvalida(ReglaNegocioError):
+    codigo = "RN-20"

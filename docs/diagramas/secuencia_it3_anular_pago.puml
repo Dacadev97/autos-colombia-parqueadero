@@ -1,0 +1,39 @@
+@startuml secuencia_it3_anular_pago
+skinparam backgroundColor white
+skinparam defaultFontName Helvetica
+skinparam sequence {
+  ParticipantBackgroundColor #E8F5E9
+  ParticipantBorderColor #1B5E20
+  LifeLineBorderColor #5B6B7C
+  ActorBorderColor #1B5E20
+}
+autonumber
+title Secuencia - Iteración 3: Anular pago (UC-19)
+
+actor Administrador
+boundary "recibo.html\n(rutas.anular_pago)" as UI
+control ServicioPagos as SPg
+entity "Pago\n(anular)" as Dom
+participant RepositorioPagos as RepP
+database SQLite as DB
+
+Administrador -> UI : escribe el motivo y confirma
+UI -> UI : rol ADMINISTRADOR (RNF-09)
+UI -> SPg : anular_pago(id_pago, motivo, operador)
+SPg -> RepP : buscar_por_id(id_pago)
+RepP -> DB : SELECT pago
+DB --> SPg : Pago VIGENTE
+SPg -> SPg : motivo de 5 a 200 caracteres
+alt pago vigente y motivo válido
+  SPg -> Dom : anular(operador, fecha, motivo) (RN-20)
+  group transacción
+    SPg -> RepP : actualizar_anulacion(pago)
+    RepP -> DB : UPDATE pago SET estado = 'ANULADO', motivo, fecha, operador
+  end
+  SPg --> UI : Pago ANULADO
+  UI --> Administrador : "El recibo quedó anulado; el mes vuelve a estar pendiente"
+else ya anulado o motivo inválido
+  SPg --> UI : AnulacionInvalida
+  UI --> Administrador : "Anulación rechazada (RN-20)"
+end
+@enduml
